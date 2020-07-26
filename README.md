@@ -6,3 +6,13 @@ Chess engine: Stockfish (https://stockfishchess.org/) with python API (https://p
 
 Computer vision: Potential dataset: https://github.com/maciejczyzewski/neural-chessboard 
 		 		    https://par.nsf.gov/servlets/purl/10099572
+		 		    
+Inverse Kinematics (kinematic coupling):
+https://www.researchgate.net/publication/261281825_A_screw_dual_quaternion_operator_for_serial_robot_kinematics
+https://www.researchgate.net/publication/276159627_Using_cuckoo_optimization_algorithm_and_imperialist_competitive_algorithm_to_solve_inverse_kinematics_problem_for_numerical_control_of_robotic_manipulators
+
+
+Slowly getting to grips with 3D printer and putting it together. I've just managed to put together the first 3 joints and the servos for the first 2 degrees of freedom:
+
+![Initial phase](Content/First_2_DoF.gif)
+
