@@ -178,7 +178,7 @@ class LX16A:
 		if offset < -30 or offset > 30:
 			raise ServoError("Offset out of range")
 		
-		angle = int(angle * 25 / 6)
+		offset = int(offset * 25 / 6)
 		
 		if offset < 0:
 			offset += 256
