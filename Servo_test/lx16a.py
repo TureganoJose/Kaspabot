@@ -633,6 +633,8 @@ class LX16A:
 		LX16A.checkPacket(returned)
 		
 		pos = returned[6] * 256 + returned[5]
+		if pos > 32767:
+			pos -= 65536
 		pos = int(pos * 6 / 25)
 		
 		return pos
