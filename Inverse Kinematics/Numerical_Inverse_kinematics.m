@@ -14,8 +14,8 @@ d4 = 160;
 d6 = 130;
 
 % End effector position, p6 relative to 0
-p6_0 = [a2*cos(q1)*cos(q2)+d4*cos(q1)*sin(q2+q3)+d6*(cos(q1)*(cos(q2+q3)*cos(q4)*sin(q5)+sin(q2+q3)*cos(q5))+sin(q1)*sin(q4)*sin(q5));
-        a2*sin(q1)*cos(q2)+d4*sin(q1)*sin(q2+q3)+d6*(sin(q1)*(cos(q2+q3)*cos(q4)*sin(q5)+sin(q2+q3)*cos(q5))-cos(q1)*sin(q4)*sin(q5));
+p6_0 = [a2*cos(q1)*cos(q2)+d4*cos(q1)*sin(q2+q3)+d6*(cos(q1)*(cos(q2+q3)*cos(q4)*sin(q5)+sin(q2+q3)*cos(q5))+sin(q1)*sin(q4)*sin(q5))
+        a2*sin(q1)*cos(q2)+d4*sin(q1)*sin(q2+q3)+d6*(sin(q1)*(cos(q2+q3)*cos(q4)*sin(q5)+sin(q2+q3)*cos(q5))-cos(q1)*sin(q4)*sin(q5))
         a2*sin(q2)-d4*cos(q2+q3)+d6*(sin(q2+q3)*cos(q4)*sin(q5)-cos(q2+q3)*cos(q5))];
 matlabFunction(p6_0,'file','func_p6_0.m','vars',[q1 q2 q3 q4 q5])
 
@@ -30,14 +30,14 @@ matlabFunction(J6_0,'file','func_J6_0.m','vars',[q1 q2 q3 q4 q5])
 q0 = [0 0 pi/2 0 -pi/2 0];
 dq0 = zeros(1,6);
 pCenter = func_p6_0(q0(1),q0(2),q0(3),q0(4),q0(5));
-radius = 0.05;
+radius = 50;
 f = 0.25;
 pGoal = @(t) pCenter + radius*[sin(2*pi*f*t),0,cos(2*pi*f*t)]';
 dpGoal = @(t) 2*pi*f*radius*[cos(2*pi*f*t),0,-sin(2*pi*f*t)]';
 
 
 % define here the time resolution
-deltaT = 0.01;
+deltaT = 0.001;
 timeArr = 0:deltaT:1/f;
 
 % q, p, and pGoal logging
@@ -45,8 +45,8 @@ qArr = zeros(6,length(timeArr));
 pArr = zeros(3,length(timeArr));
 pGoalArr = zeros(3,length(timeArr));
 
-q = q0;
-dq = dq0;
+q = q0';
+dq = dq0';
 for i=1:length(timeArr)
     t = timeArr(i);
     % data logging, don't change this!
@@ -61,6 +61,10 @@ for i=1:length(timeArr)
     %v = ...;
     % step 2: perform inverse differential kinematics to calculate the
     % generalized velocities
-    dq = pinv(func_J6_0(q(1),q(2),q(3),q(4),q(5)))*(pGoal(t)-pArr(:,i));
+    dq = 20*pinv(func_J6_0(q(1),q(2),q(3),q(4),q(5)))*(pGoal(t)-pArr(:,i));
     
 end
+plot3(pArr(1,:),pArr(2,:),pArr(3,:))
+hold on
+plot3(pGoalArr(1,:),pGoalArr(2,:),pGoalArr(3,:))
+axis equal
