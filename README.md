@@ -16,3 +16,10 @@ Slowly getting to grips with 3D printer and putting it together. I've just manag
 
 ![Initial phase](Content/First_2_DoF.gif)
 
+
+
+Created a 3d model of the robot and used what it seems to be the standard for their simulations. At a first glance it looks medieval compared to multibody simulations in other industries.
+
+
+![Initial phase](Content/Gazebo_manual_simulation.gif)
+

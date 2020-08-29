@@ -1,0 +1,339 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <model name="Kaspabot">
+    <pose>0 0 0.125023000 0 0 0</pose>
+    <static>false</static>
+    <link name="base_link">
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="base_link_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Joint1/Joint1_cube.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="link2">
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>1.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>1.001000</iyy>
+          <iyz>0</iyz>
+          <izz>1.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="link2_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Joint2/Joint2_base.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="link3">
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="link3_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Joint3/Joint3_base.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="link4">
+      <pose>0 0 -0.002 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="link4_vis">
+        <pose>0 0 0 0 0 0</pose>s
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Joint4/JOINT4_OVERVIEW.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="link5">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="link5_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Joint5/JOINT5_OVERVIEW.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="link6">
+      <pose>0 0 0 0 0 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="link6_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Joint6/JOINT6_OVERVIEW.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="claw_base">
+      <pose>0 -0.01 0.14 -1.57 -3.14 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="claw_base_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Gripper/Gripper_base.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="claw_left">
+      <pose>0 -0.01 0.14 -1.57 -3.14 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="claw_left_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Gripper/Gripper_left.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name="claw_right">
+      <pose>0 -0.01 0.14 -1.57 -3.14 0</pose>
+      <inertial>
+        <mass>0.1</mass>
+        <inertia>
+          <ixx>0.001000</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.001000</iyy>
+          <iyz>0</iyz>
+          <izz>0.001000</izz>
+        </inertia>
+      </inertial>
+      <visual name="claw_right_vis">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry>
+	  <mesh>
+	    <uri>model://Kaspabot/meshes/Gripper/Gripper_right.stl</uri>
+	    <scale>0.001 0.001 0.001</scale>
+	  </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="fixed to ground" type="fixed">
+      <parent>world</parent>
+      <child>base_link</child>
+    </joint>
+    <joint name="base_link_to_link2" type="revolute">
+      <child>link2</child>
+      <parent>base_link</parent>
+      <pose>0 0 0 0 0 0</pose>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <dynamics>
+ 	  <friction>0.00</friction>
+ 	  <damping>1</damping>
+        </dynamics>
+     </axis>
+    </joint>
+    <joint name="link2_to_link3" type="revolute">
+      <child>link3</child>
+      <parent>link2</parent>
+      <pose>0 0 0.0062 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <dynamics>
+          <damping>1</damping>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <effort>1.0</effort>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="link3_to_link4" type="revolute">
+      <child>link4</child>
+      <parent>link3</parent>
+      <pose>0 -0.01154 0.13876 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <dynamics>
+          <damping>1</damping>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <effort>1.0</effort>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="link4_to_link5" type="revolute">
+      <child>link5</child>
+      <parent>link4</parent>
+      <pose>0 -0.01154 0.13676 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <dynamics>
+          <damping>1</damping>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <effort>1.0</effort>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="link5_to_link6" type="revolute">
+      <child>link6</child>
+      <parent>link5</parent>
+      <pose>0 -0.170 0.13876 0 0 0</pose>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <dynamics>
+          <damping>1</damping>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <effort>1.0</effort>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="link6_to_claw_base" type="revolute">
+      <child>claw_base</child>
+      <parent>link6</parent>
+      <pose>0 -0.170 0.13876 0 0 0</pose>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <dynamics>
+          <damping>1</damping>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <effort>1.0</effort>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="claw_base_to_claw_left" type="revolute">
+      <child>claw_left</child>
+      <parent>claw_base</parent>
+      <pose>0 -0.190 0.13876 0 0 0</pose>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <dynamics>
+          <damping>1</damping>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <effort>1.0</effort>
+        </limit>
+      </axis>
+    </joint>
+    <joint name="claw_base_to_claw_right" type="revolute">
+      <child>claw_right</child>
+      <parent>claw_base</parent>
+      <pose>0 -0.190 0.13876 0 0 0</pose>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <use_parent_model_frame>true</use_parent_model_frame>
+        <dynamics>
+          <damping>1</damping>
+          <friction>0</friction>
+        </dynamics>
+        <limit>
+          <effort>1.0</effort>
+        </limit>
+      </axis>
+    </joint>
+  </model>
+</sdf>
