@@ -27,7 +27,7 @@ matlabFunction(J6_0,'file','func_J6_0.m','vars',[q1 q2 q3 q4 q5])
 
 
 % Define trajectory
-q0 = [0 0 pi/2 0 -pi/2 0];
+q0 = [0 pi/2 pi/2 0 -pi/2 0];
 dq0 = zeros(1,6);
 pCenter = func_p6_0(q0(1),q0(2),q0(3),q0(4),q0(5));
 radius = 50;
