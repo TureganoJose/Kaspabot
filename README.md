@@ -23,3 +23,6 @@ Created a 3d model of the robot and used what it seems to be the standard for th
 
 ![Initial phase](Content/Gazebo_manual_simulation.gif)
 
+It's been a while since Kaggle allowed me to work on this project.
+This is a great source on QP, simple, clean and well explained (https://scaron.info/teaching/inverse-kinematics.html)
+
