@@ -93,8 +93,8 @@ q0 = np.array([q1, q2, q3, q4, q5, q6]) #np.array([0, pi/2, pi/2, 0, -pi/2, 0])
 dq0 = np.zeros((1, 6))
 radius = 50
 pCenter = End_Effector_position(q0, a2, d4, d6)
-pCenter[0] += 50
-pCenter[2] += 50
+pCenter[0] += 1
+pCenter[2] += 1
 q = q0
 dq = dq0
 
@@ -105,24 +105,21 @@ pGoalArr = np.zeros((3, timeArr.shape[0]))
 pGoalArr[:, :] = pCenter.reshape(3, 1) + radius * np.array([np.sin(2*pi*f*timeArr), np.zeros((timeArr.shape[0])), np.cos(2*pi*f*timeArr)])
 
 # QP problem
-# Implementing this paper
-# https://www.researchgate.net/publication/5614013_A_dual_neural_network_for_redundancy_resolution_of_kinematically_redundant_manipulators_subject_to_joint_limits_and_joint_velocity_limits
-
+# Implementation of this paper
+# https://roam.me.columbia.edu/files/seasroamlab/publications/humanoids2013.pdf
 Q = np.identity(6)
 p = np.ones((6, 1))
-q_dot_max = 1
-q_dot_min = -1
 q_max = 240 * pi/180
 q_min = 0
-k = 2
-beta = 0.5
+end_effector_error = 1e-3
+
 for i in range(timeArr.shape[0]):
     p_ef = End_Effector_position(q, a2, d4, d6)
     t = timeArr[i]
     J = Jacobian_end_effector(q, a2, d4, d6)
     A = J
     b = (pGoalArr[:, i] - p_ef)/deltaT  # r_dot
-    G = np.vstack([ -np.eye(6), np.eye(6)])
+    G = np.vstack([-J, J, -np.eye(6), -np.eye(6)])
     lower_bound = np.vstack([q_dot_min*np.ones((1, 6)), k*(beta * q_min*np.ones((1, 6))-q)])
     lower_bound = np.amax( lower_bound, axis=0)
     upper_bound = np.vstack([q_dot_max*np.ones((1, 6)), k*(beta * q_max*np.ones((1, 6))-q)])
@@ -144,6 +141,46 @@ axs[1].plot(timeArr, qArr[0, :]*180/pi, 'y', timeArr, qArr[1, :]*180/pi, 'b', ti
 axs[1].set(xlabel='time (mm)', ylabel='Joint angle (deg)',
        title='Joint angles')
 axs[1].grid()
+
+# Implementing this paper
+# https://www.researchgate.net/publication/5614013_A_dual_neural_network_for_redundancy_resolution_of_kinematically_redundant_manipulators_subject_to_joint_limits_and_joint_velocity_limits
+
+# Q = np.identity(6)
+# p = np.ones((6, 1))
+# q_dot_max = 1
+# q_dot_min = -1
+# q_max = 240 * pi/180
+# q_min = 0
+# k = 2
+# beta = 0.5
+# for i in range(timeArr.shape[0]):
+#     p_ef = End_Effector_position(q, a2, d4, d6)
+#     t = timeArr[i]
+#     J = Jacobian_end_effector(q, a2, d4, d6)
+#     A = J
+#     b = (pGoalArr[:, i] - p_ef)/deltaT  # r_dot
+#     G = np.vstack([ -np.eye(6), np.eye(6)])
+#     lower_bound = np.vstack([q_dot_min*np.ones((1, 6)), k*(beta * q_min*np.ones((1, 6))-q)])
+#     lower_bound = np.amax( lower_bound, axis=0)
+#     upper_bound = np.vstack([q_dot_max*np.ones((1, 6)), k*(beta * q_max*np.ones((1, 6))-q)])
+#     upper_bound = np.amin( upper_bound, axis=0)
+#     h = np.hstack([-lower_bound, upper_bound])
+#     sol = solvers.qp(matrix(Q), matrix(p), matrix(G), matrix(h), matrix(A), matrix(b))
+#     q = np.array(sol['x'])
+#     qArr[:, [i]] = q
+#     pArr[:, [i]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
+#
+# fig, axs = plt.subplots(2)
+# axs[0].plot(pArr[0, :], pArr[2, :], 'b', pGoalArr[0, :], pGoalArr[2, :], 'r' )
+# axs[0].set(xlabel='X pos (mm)', ylabel='Y pos (mm)',
+#        title='End effector position')
+# axs[0].grid()
+#
+# axs[1].plot(timeArr, qArr[0, :]*180/pi, 'y', timeArr, qArr[1, :]*180/pi, 'b', timeArr, qArr[2, :]*180/pi, 'r',
+#             timeArr, qArr[3, :]*180/pi, 'm', timeArr, qArr[4, :]*180/pi, 'k', timeArr, qArr[5, :]*180/pi, 'g')
+# axs[1].set(xlabel='time (mm)', ylabel='Joint angle (deg)',
+#        title='Joint angles')
+# axs[1].grid()
 
 # Q = np.identity(9)
 # p = np.zeros((9, 1))
