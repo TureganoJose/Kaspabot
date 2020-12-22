@@ -107,7 +107,11 @@ pGoalArr[:, :] = pCenter.reshape(3, 1) + radius * np.array([np.sin(2*pi*f*timeAr
 # QP problem
 # Implementation of this paper
 # https://roam.me.columbia.edu/files/seasroamlab/publications/humanoids2013.pdf
-Q = np.identity(6)
+
+Wx = np.identity(6)
+Wdeltaq = np.identity(6)
+Wq = np.identity(6)
+# Q = np.identity(6)
 p = np.ones((6, 1))
 q_max = 240 * pi/180
 q_min = 0
@@ -117,6 +121,14 @@ for i in range(timeArr.shape[0]):
     p_ef = End_Effector_position(q, a2, d4, d6)
     t = timeArr[i]
     J = Jacobian_end_effector(q, a2, d4, d6)
+    Q1 = np.linalg.multi_dot(J.transpore, Wx, J)
+    Q2 = Wdeltaq
+    Q3 = Wq
+    Q = Q1 + Q2 + Q3
+    delta_p = pGoalArr[:, i] - p_ef
+    dq_desired = 0.5 * (q_max - q_min) * np.ones((6, 1))
+    p1 = - np.linearlg.multi_dot(delta_p.transpose, Wx, J, J.trasnpose, Wx, J)
+    p3 = - np.dot(dq_desired.transpose, Wq)
     A = J
     b = (pGoalArr[:, i] - p_ef)/deltaT  # r_dot
     G = np.vstack([-J, J, -np.eye(6), -np.eye(6)])
