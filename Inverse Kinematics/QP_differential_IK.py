@@ -7,6 +7,50 @@ import matplotlib
 import matplotlib.pyplot as plt
 from cvxopt import matrix, solvers
 
+
+# Calculate servo limits
+def calculate_servo_limits(servos: list, home: np.array, q0: np.array):
+    servo_max = 240
+    servo_min = 0
+    q_servo_min = np.zeros((1, len(servos)))
+    q_servo_max = np.zeros((1, len(servos)))
+    q_servo_limits = np.zeros((2, len(servos)))
+    for iservo, servo in enumerate(servos):
+        nJoint = iservo + 1
+        if nJoint == 4 or nJoint == 5 or nJoint == 6:
+            q_servo_limits[0, iservo] = (- (servo_min - home[iservo]) * (pi / 180)) + q0[iservo]
+            q_servo_limits[1, iservo] = (- (servo_max - home[iservo]) * (pi / 180)) + q0[iservo]
+        elif nJoint == 1:
+            q_servo_limits[0, iservo] = ((servo_min - home[iservo]) * (pi / 180)) + q0[iservo]
+            q_servo_limits[1, iservo] = ((servo_max - home[iservo]) * (pi / 180)) + q0[iservo]
+        elif nJoint == 2:
+            q_servo_limits[0, iservo] = (-0.5 * (servo_min - home[iservo]) * (pi / 180)) + q0[iservo]
+            q_servo_limits[1, iservo] = (-0.5 * (servo_max - home[iservo]) * (pi / 180)) + q0[iservo]
+        elif nJoint == 3:
+            q_servo_limits[0, iservo] = (0.5 * (servo_min - home[iservo]) * (pi / 180)) + q0[iservo]
+            q_servo_limits[1, iservo] = (0.5 * (servo_max - home[iservo]) * (pi / 180)) + q0[iservo]
+
+    q_servo_min = np.amin(q_servo_limits, axis=0)
+    q_servo_max = np.amax(q_servo_limits, axis=0)
+    return q_servo_min, q_servo_max
+
+# Homing function
+def Homing(servos: list, home: np.array):
+    offset = np.zeros((len(servos), 1))
+    for iservo, servo in enumerate(servos):
+        # Move to home position
+        servo.moveTimeWrite(angle=home[iservo], time=1500)
+        time.sleep(0.1)
+        print("Servo angle {}: {}".format(iservo, servo.getPhysicalPos()))
+
+        # Calculate deviation
+        time.sleep(0.5)
+        offset[iservo] = servo.getPhysicalPos() - home[iservo]
+        print("CurrentServo offset {}: {}".format(iservo, offset[iservo]))
+
+        print("Final Servo angle {}: {}".format(iservo, servo.getPhysicalPos()))
+    return offset
+
 # From Joint angle to servo command
 # Accuracy of LX-16a is 0.24deg. That's a +1 position in the servo demand.
 def Joint_angle_to_servo(angle, q0, nJoint, home):
@@ -29,12 +73,13 @@ def Joint_angle_to_servo(angle, q0, nJoint, home):
     return servo_angle
 
 # Move robot to desired position
-def move_to_position(servos: list, q: np.array, q0: np.array, home: np.array):
+def move_to_position(servos: list, q: np.array, q0: np.array, home: np.array, b_online: bool):
     servo_angles = np.zeros((len(servos), 1))
     for iservo, servo in enumerate(servos):
         servo_angle = Joint_angle_to_servo(q[0, iservo], q0, iservo+1, home)
         servo_angles[iservo, 0] = servo_angle
-        #servo.moveTimeWrite(angle=servo_angle, time=100)
+        if b_online:
+            servo.moveTimeWrite(angle=servo_angle, time=100)
     time.sleep(0.01)
     return servo_angles
 
@@ -94,32 +139,46 @@ def Jacobian_end_effector(q, a2, d4, d6):
                       0]])
     return J6_0
 
+
+
+# This is the port that the controller board is connected to
+# This will be different for different computers
+# On Windows, try the ports COM1, COM2, COM3, etc...
+# On Raspbian, try each port in /dev/
+b_robot_online = False
+
+if b_robot_online:
+    LX16A.initialize("COM3")
+
 # Define all the servos
-#servos = [LX16A(1), LX16A(2), LX16A(3), LX16A(4), LX16A(5), LX16A(6)] #LX16A(7)
-servos = [1, 2, 3, 4, 5, 6]
+if b_robot_online:
+    servos = [LX16A(1), LX16A(2), LX16A(3), LX16A(4), LX16A(5), LX16A(6)] #LX16A(7)
+else:
+    servos = [1, 2, 3, 4, 5, 6]  # dummy servos
 
 # Initial home position
 # Define home servo angles
 home = np.zeros((7, 1))
-home[0] = 120
-home[1] = 120  # servo position 500 = 120 deg
-home[2] = 0
-home[3] = 110  # servo position 458 = 110 deg
-home[4] = 240
-home[5] = 115
-home[6] = 0
+home[0] = 120  # q1
+home[1] = 120  # q2  # servo position 500 = 120 deg
+home[2] = 55   # q3
+home[3] = 110  # q4  # servo position 458 = 110 deg
+home[4] = 183  # q5
+home[5] = 120  # q6
+home[6] = 0    # q7
 
 # Measured distance between joint 2 and 5
-measurement = 79
+measurement = 83
 d4 = 160
 a2 = 130
 d6 = 130
 
-# Angle between link 2 and 3
+# Angle between link 2 and 3, joint q3
 a23 = acos((pow(a2, 2)+pow(d4, 2)-pow(measurement, 2))/(2*a2*d4))
 
 # Homing robot
-#offset = Homing(servos, home)
+if b_robot_online:
+    offset = Homing(servos, home)
 
 ## Inverse kinematics
 # Initial pose as defined for Inverse kinematics and initial homing position of the robot
@@ -140,7 +199,7 @@ dq0 = np.zeros((1, 6))
 radius = 50
 pCenter = End_Effector_position(q0, a2, d4, d6)
 pCenter[0] += 0
-pCenter[2] += 1
+pCenter[2] += 10
 q = q0
 dq = dq0
 
@@ -151,7 +210,7 @@ servo_qArr = np.zeros((6, timeArr.shape[0]))
 pGoalArr = np.zeros((3, timeArr.shape[0]))
 
 # Straight line between pCenter and pGoal
-pGoal = np.array([310.0, 0.0, 60])
+pGoal = np.array([250.0, 0.0, 150])
 pGoalArr[0] = pCenter[0] + (((pGoal[0] - pCenter[0])/np.amax(timeArr))*timeArr)
 pGoalArr[1] = pCenter[1] + (((pGoal[1] - pCenter[1])/np.amax(timeArr))*timeArr)
 pGoalArr[2] = pCenter[2] + (((pGoal[2] - pCenter[2])/np.amax(timeArr))*timeArr)
@@ -160,7 +219,7 @@ pGoalArr[2] = pCenter[2] + (((pGoal[2] - pCenter[2])/np.amax(timeArr))*timeArr)
 # pGoalArr[:, :] = radius * np.array([np.sin(2*pi*f*timeArr), np.zeros((timeArr.shape[0])), np.cos(2*pi*f*timeArr)])
 # pGoalArr[0, :] += pCenter[0]
 # pGoalArr[1, :] += pCenter[1]
-# pGoalArr[2, :] += pCenter[2] - radius - 10
+# pGoalArr[2, :] += pCenter[2] - radius
 
 # QP problem
 # Implementation of this paper
@@ -171,26 +230,34 @@ Wdeltaq = 1 * np.identity(6)
 Wq = np.identity(6)
 # Q = np.identity(6)
 p = np.ones((6, 1))
-q_min = np.array([-120, 30, -59,  -180, 89, -180]) * pi/180
-q_max = np.array([ 120, 150, 60, 180, 180, 180]) * pi/180
+# Physical limits of the servo (between 0 and 240 deg at servo level)
+q_servo_limits = calculate_servo_limits(servos, home, q0)
+q_servo_min = q_servo_limits[0]
+q_servo_max = q_servo_limits[1]
+# Physical limits of the robot (which should vary with the angles but at the moment defined below)
+q_robot_min = np.array([-0,  30, -59,  -180, 89, -180]) * pi/180
+q_robot_max = np.array([ 0, 150,  60,   180, 180, 180]) * pi/180
+# Final limits
+q_min = np.amax(np.vstack([q_servo_min, q_robot_min]), axis=0)
+q_max = np.amin(np.vstack([q_servo_max, q_robot_max]), axis=0)
 delta_q_min = -3 * np.ones((1, 6)) * pi/180
 delta_q_max = 3 * np.ones((1, 6)) * pi/180
 end_effector_error = 1e-3
 
 qArr[:, [0]] = q.reshape(6, 1)
 pArr[:, [0]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
-servo_qArr[:, [0]] = move_to_position(servos, q.reshape(1, 6), q0, home)
+servo_qArr[:, [0]] = move_to_position(servos, q.reshape(1, 6), q0, home, b_robot_online)
 for i in range(1, timeArr.shape[0]):
     p_ef = End_Effector_position(q, a2, d4, d6)
     t = timeArr[i]
     J = Jacobian_end_effector(q, a2, d4, d6)
-    Q1 = 2 * np.linalg.multi_dot([J.transpose(), J]) #np.linalg.multi_dot([J.transpose(), Wx, J])
+    Q1 = 2 * np.linalg.multi_dot([J.transpose(), J])
     Q2 = Wdeltaq
     Q3 = Wq
     Q = Q1
     delta_p = pGoalArr[:, i] - p_ef
     dq_desired = 0.5 * (q_max - q_min) * np.ones((6, 1))
-    p1 = -2 * np.linalg.multi_dot([J.transpose(), delta_p]) #- np.linalg.multi_dot([delta_p.transpose(), Wx, J, J.transpose(), Wx, J])
+    p1 = -2 * np.linalg.multi_dot([J.transpose(), delta_p])
     p3 = - np.dot(dq_desired.transpose(), Wq)
     p = p1
     A = J
@@ -204,12 +271,15 @@ for i in range(1, timeArr.shape[0]):
     sol = solvers.qp(matrix(Q), matrix(p), matrix(G), matrix(h))
     q = q + np.array(sol['x']).transpose()
 
-    servo_qArr[:, [i]] = move_to_position(servos, q, q0, home)
+    servo_qArr[:, [i]] = move_to_position(servos, q, q0, home, b_robot_online)
     time.sleep(deltaT)
 
     qArr[:, [i]] = q.transpose()
     pArr[:, [i]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
 
+# Homing robot
+if b_robot_online:
+    offset = Homing(servos, home)
 
 fig, axs = plt.subplots(3)
 axs[0].plot(pArr[0, :], pArr[2, :], 'b', pGoalArr[0, :], pGoalArr[2, :], 'r' )

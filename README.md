@@ -26,3 +26,14 @@ Created a 3d model of the robot and used what it seems to be the standard for th
 It's been a while since Kaggle allowed me to work on this project.
 This is a great source on QP, simple, clean and well explained (https://scaron.info/teaching/inverse-kinematics.html)
 
+
+Implementation of this paper where decision variables of the controller are the incremental angle of the joints rather than speeds which seems to be the norm.
+Least square problem is transformed to QP problem with two inequality constraints, the incremental joint angles are limited by a max/min joint angles and max/min incremental values.
+
+https://roam.me.columbia.edu/files/seasroamlab/publications/humanoids2013.pdf
+
+
+![Full robot moving](Content/robot-control.gif]
+
+
+![Full robot moving](Content/Linear_trajectory.PNG]
