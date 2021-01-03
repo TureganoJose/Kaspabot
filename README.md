@@ -35,7 +35,7 @@ Least square problem is transformed to QP problem with two inequality constraint
 https://roam.me.columbia.edu/files/seasroamlab/publications/humanoids2013.pdf
 
 
-![Full robot moving](Content/robot-control.gif)
+![Full robot moving](Content/robot_full.gif)
 
 
 ![Straight line trajectory](Content/Linear_trajectory.PNG)
