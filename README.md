@@ -1,5 +1,7 @@
 # Robotic arm with computer vision
 
+![Straight line trajectory](Content/IK_DH_params.png)
+
 Serial servos: Lx-16a
 
 Chess engine: Stockfish (https://stockfishchess.org/) with python API (https://pypi.org/project/stockfish/)
@@ -33,7 +35,7 @@ Least square problem is transformed to QP problem with two inequality constraint
 https://roam.me.columbia.edu/files/seasroamlab/publications/humanoids2013.pdf
 
 
-![Full robot moving](Content/robot-control.gif]
+![Full robot moving](Content/robot-control.gif)
 
 
-![Full robot moving](Content/Linear_trajectory.PNG]
+![Straight line trajectory](Content/Linear_trajectory.PNG)
