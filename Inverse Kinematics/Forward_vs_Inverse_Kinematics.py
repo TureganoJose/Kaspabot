@@ -9,6 +9,54 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.widgets import Slider, Button, RadioButtons
 
 
+# Homing function
+def Homing(servos: list, home: np.array):
+    offset = np.zeros((len(servos), 1))
+    for iservo, servo in enumerate(servos):
+        # Move to home position
+        servo.moveTimeWrite(angle=home[iservo], time=1500)
+        time.sleep(0.1)
+        print("Servo angle {}: {}".format(iservo, servo.getPhysicalPos()))
+
+        # Calculate deviation
+        time.sleep(0.5)
+        offset[iservo] = servo.getPhysicalPos() - home[iservo]
+        print("CurrentServo offset {}: {}".format(iservo, offset[iservo]))
+
+        print("Final Servo angle {}: {}".format(iservo, servo.getPhysicalPos()))
+    return offset
+
+# From Joint angle to servo command
+# Accuracy of LX-16a is 0.24deg. That's a +1 position in the servo demand.
+def Joint_angle_to_servo(angle, q0, nJoint, home):
+    # Joints with belt r2/r1 = 60/30 = 2
+    if nJoint == 2 or nJoint == 3:
+        delta_angle = 2 * (angle - q0[nJoint - 1]) * 180/pi
+    else:
+        delta_angle = (angle - q0[nJoint - 1]) * 180/pi
+    # If sign conventions are different
+    if nJoint == 2 or nJoint == 4 or nJoint == 6: # or nJoint == 6:
+        servo_angle = home[nJoint - 1, 0] - delta_angle
+    else:
+        servo_angle = home[nJoint - 1, 0] + delta_angle
+    # if servo_angle<0:
+    #     servo_angle = 0
+    #     print("Joint {} is below 0".format(nJoint))
+    # elif servo_angle>240:
+    #     servo_angle = 240
+    #     print("Joint {} is above 240".format(nJoint))
+    return servo_angle
+
+# Move robot to desired position
+def move_to_position(servos: list, q: np.array, q0: np.array, home: np.array, b_online: bool):
+    servo_angles = np.zeros((len(servos), 1))
+    for iservo, servo in enumerate(servos):
+        servo_angle = Joint_angle_to_servo(q[iservo], q0, iservo+1, home)
+        servo_angles[iservo, 0] = servo_angle
+        if b_online:
+            servo.moveTimeWrite(angle=servo_angle, time=100)
+    time.sleep(0.01)
+    return servo_angles
 
 # End effector position, p6 relative to
 def End_Effector_position(q, a2, d4, d6):
@@ -130,13 +178,41 @@ def forward_kinematics(q: np.array, a2, d4, d6):
 
 ## Kinematics
 # Measured distance between joint 2 and 5
-measurement = 79
+measurement = 70
 d4 = 160
 a2 = 130
-d6 = 120
+d6 = 130
 
 # Angle between link 2 and 3
 a23 = acos((pow(a2, 2)+pow(d4, 2)-pow(measurement, 2))/(2*a2*d4))
+
+# Flag to disable robot
+b_robot_online = False
+
+if b_robot_online:
+    LX16A.initialize("COM3")
+
+# Define all the servos
+if b_robot_online:
+    servos = [LX16A(1), LX16A(2), LX16A(3), LX16A(4), LX16A(5), LX16A(6)] #LX16A(7)
+else:
+    servos = [1, 2, 3, 4, 5, 6]  # dummy servos
+
+# Initial home position
+# Define home servo angles
+home = np.zeros((7, 1))
+home[0] = 120  # q1
+home[1] = 120  # q2  # servo position 500 = 120 deg
+home[2] = 55   # q3
+home[3] = 110  # q4  # servo position 458 = 110 deg
+home[4] = 183  # q5
+home[5] = 120  # q6
+home[6] = 0    # q7
+
+# Homing robot
+if b_robot_online:
+    offset = Homing(servos, home)
+
 
 # Initial pose as defined for Inverse kinematics and initial homing position of the robot
 q1 = pi/3
@@ -155,11 +231,14 @@ q6 = 0
 
 q0 = np.array([q1, q2, q3, q4, q5, q6]) #np.array([0, pi/2, pi/2, 0, -pi/2, 0])
 
+
+# Comparing end effector position IK vs FK
 points = forward_kinematics(q0,  a2, d4, d6)
 p_end_effector_fk = points[5, :]
 p_end_effector_ik = End_Effector_position(q0, a2, d4, d6)
 
 
+# Plot and controls of the robot
 fig = plt.figure()
 ax = fig.gca(projection='3d')
 # fig, ax = plt.subplots()
@@ -202,7 +281,8 @@ def update(val):
     DK.set_xdata(points[:, 0])
     DK.set_ydata(points[:, 1])
     DK.set_3d_properties(points[:, 2])
-
+    if b_robot_online:
+        move_to_position(servos, q, q0, home, b_robot_online)
     fig.canvas.draw_idle()
 
 sq1.on_changed(update)

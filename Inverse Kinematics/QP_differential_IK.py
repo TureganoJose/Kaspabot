@@ -60,7 +60,7 @@ def Joint_angle_to_servo(angle, q0, nJoint, home):
     else:
         delta_angle = (angle - q0[nJoint - 1]) * 180/pi
     # If sign conventions are different
-    if nJoint == 2 or nJoint == 4 or nJoint == 5 or nJoint == 6:
+    if nJoint == 2 or nJoint == 4 or nJoint == 6: #or nJoint == 6:
         servo_angle = home[nJoint - 1, 0] - delta_angle
     else:
         servo_angle = home[nJoint - 1, 0] + delta_angle
@@ -76,7 +76,7 @@ def Joint_angle_to_servo(angle, q0, nJoint, home):
 def move_to_position(servos: list, q: np.array, q0: np.array, home: np.array, b_online: bool):
     servo_angles = np.zeros((len(servos), 1))
     for iservo, servo in enumerate(servos):
-        servo_angle = Joint_angle_to_servo(q[0, iservo], q0, iservo+1, home)
+        servo_angle = Joint_angle_to_servo(q[iservo], q0, iservo+1, home)
         servo_angles[iservo, 0] = servo_angle
         if b_online:
             servo.moveTimeWrite(angle=servo_angle, time=100)
@@ -168,7 +168,7 @@ home[5] = 120  # q6
 home[6] = 0    # q7
 
 # Measured distance between joint 2 and 5
-measurement = 83
+measurement = 70
 d4 = 160
 a2 = 130
 d6 = 130
@@ -190,7 +190,7 @@ q5 = pi/2
 q6 = 0
 
 f = 0.25
-deltaT = 0.01
+deltaT = 0.1
 timeArr = np.arange(0.0, 1/f, deltaT)
 
 # Define trajectory
@@ -199,9 +199,12 @@ dq0 = np.zeros((1, 6))
 radius = 50
 pCenter = End_Effector_position(q0, a2, d4, d6)
 pCenter[0] += 0
-pCenter[2] += 10
+pCenter[2] += 0
 q = q0
 dq = dq0
+
+# Solver option
+solvers.options['show_progress'] = True
 
 # q, p, and pGoal logging
 qArr = np.zeros((6, timeArr.shape[0]))
@@ -210,7 +213,7 @@ servo_qArr = np.zeros((6, timeArr.shape[0]))
 pGoalArr = np.zeros((3, timeArr.shape[0]))
 
 # Straight line between pCenter and pGoal
-pGoal = np.array([250.0, 0.0, 150])
+pGoal = np.array([310.0, 0.0, 50])
 pGoalArr[0] = pCenter[0] + (((pGoal[0] - pCenter[0])/np.amax(timeArr))*timeArr)
 pGoalArr[1] = pCenter[1] + (((pGoal[1] - pCenter[1])/np.amax(timeArr))*timeArr)
 pGoalArr[2] = pCenter[2] + (((pGoal[2] - pCenter[2])/np.amax(timeArr))*timeArr)
@@ -222,6 +225,8 @@ pGoalArr[2] = pCenter[2] + (((pGoal[2] - pCenter[2])/np.amax(timeArr))*timeArr)
 # pGoalArr[2, :] += pCenter[2] - radius
 
 # QP problem
+# Or should I say SQP?
+
 # Implementation of this paper
 # https://roam.me.columbia.edu/files/seasroamlab/publications/humanoids2013.pdf
 
@@ -246,14 +251,14 @@ end_effector_error = 1e-3
 
 qArr[:, [0]] = q.reshape(6, 1)
 pArr[:, [0]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
-servo_qArr[:, [0]] = move_to_position(servos, q.reshape(1, 6), q0, home, b_robot_online)
+servo_qArr[:, [0]] = move_to_position(servos, q, q0, home, b_robot_online)
 for i in range(1, timeArr.shape[0]):
     p_ef = End_Effector_position(q, a2, d4, d6)
     t = timeArr[i]
     J = Jacobian_end_effector(q, a2, d4, d6)
     Q1 = 2 * np.linalg.multi_dot([J.transpose(), J])
-    Q2 = Wdeltaq
-    Q3 = Wq
+    #Q2 = Wdeltaq
+    #Q3 = Wq
     Q = Q1
     delta_p = pGoalArr[:, i] - p_ef
     dq_desired = 0.5 * (q_max - q_min) * np.ones((6, 1))
@@ -271,7 +276,7 @@ for i in range(1, timeArr.shape[0]):
     sol = solvers.qp(matrix(Q), matrix(p), matrix(G), matrix(h))
     q = q + np.array(sol['x']).transpose()
 
-    servo_qArr[:, [i]] = move_to_position(servos, q, q0, home, b_robot_online)
+    servo_qArr[:, [i]] = move_to_position(servos, q.squeeze(), q0, home, b_robot_online)
     time.sleep(deltaT)
 
     qArr[:, [i]] = q.transpose()
@@ -282,7 +287,7 @@ if b_robot_online:
     offset = Homing(servos, home)
 
 fig, axs = plt.subplots(3)
-axs[0].plot(pArr[0, :], pArr[2, :], 'b', pGoalArr[0, :], pGoalArr[2, :], 'r' )
+axs[0].plot(pArr[0, :], pArr[2, :], 'bo',  pGoalArr[0, :], pGoalArr[2, :], 'r' )
 axs[0].set(xlabel='X pos (mm)', ylabel='Y pos (mm)',
        title='End effector position')
 axs[0].grid()
