@@ -168,7 +168,7 @@ home[5] = 120  # q6
 home[6] = 0    # q7
 
 # Measured distance between joint 2 and 5
-measurement = 70
+measurement = 86
 d4 = 160
 a2 = 130
 d6 = 130
@@ -184,13 +184,13 @@ if b_robot_online:
 # Initial pose as defined for Inverse kinematics and initial homing position of the robot
 q1 = 0
 q2 = pi/2
-q3 = -(pi/2 - a23)
+q3 = -(pi/2 - a23) # Review this lower limit, it seems too low (it depends on measurement between joint 2 and 5
 q4 = 0
 q5 = pi/2
 q6 = 0
 
 f = 0.25
-deltaT = 0.1
+deltaT = 0.05
 timeArr = np.arange(0.0, 1/f, deltaT)
 
 # Define trajectory
@@ -209,11 +209,12 @@ solvers.options['show_progress'] = True
 # q, p, and pGoal logging
 qArr = np.zeros((6, timeArr.shape[0]))
 pArr = np.zeros((3, timeArr.shape[0]))
+dArr = np.zeros((1, timeArr.shape[0]))
 servo_qArr = np.zeros((6, timeArr.shape[0]))
 pGoalArr = np.zeros((3, timeArr.shape[0]))
 
 # Straight line between pCenter and pGoal
-pGoal = np.array([310.0, 0.0, 50])
+pGoal = np.array([250.0, 0.0, 33]) #([310.0, 0.0, 50])
 pGoalArr[0] = pCenter[0] + (((pGoal[0] - pCenter[0])/np.amax(timeArr))*timeArr)
 pGoalArr[1] = pCenter[1] + (((pGoal[1] - pCenter[1])/np.amax(timeArr))*timeArr)
 pGoalArr[2] = pCenter[2] + (((pGoal[2] - pCenter[2])/np.amax(timeArr))*timeArr)
@@ -245,25 +246,27 @@ q_robot_max = np.array([ 0, 150,  60,   180, 180, 180]) * pi/180
 # Final limits
 q_min = np.amax(np.vstack([q_servo_min, q_robot_min]), axis=0)
 q_max = np.amin(np.vstack([q_servo_max, q_robot_max]), axis=0)
-delta_q_min = -3 * np.ones((1, 6)) * pi/180
-delta_q_max = 3 * np.ones((1, 6)) * pi/180
+delta_q_min = -10 * np.ones((1, 6)) * pi/180
+delta_q_max = 10 * np.ones((1, 6)) * pi/180
 end_effector_error = 1e-3
 
 qArr[:, [0]] = q.reshape(6, 1)
 pArr[:, [0]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
 servo_qArr[:, [0]] = move_to_position(servos, q, q0, home, b_robot_online)
+delta_p = pGoalArr[:, 0] - pArr[:, 0]
+dArr[:, [0]] = np.linalg.norm(delta_p)
+
 for i in range(1, timeArr.shape[0]):
     p_ef = End_Effector_position(q, a2, d4, d6)
     t = timeArr[i]
     J = Jacobian_end_effector(q, a2, d4, d6)
-    Q1 = 2 * np.linalg.multi_dot([J.transpose(), J])
+    Q1 = 2  * np.linalg.multi_dot([J.transpose(), J])
     #Q2 = Wdeltaq
     #Q3 = Wq
     Q = Q1
-    delta_p = pGoalArr[:, i] - p_ef
-    dq_desired = 0.5 * (q_max - q_min) * np.ones((6, 1))
-    p1 = -2 * np.linalg.multi_dot([J.transpose(), delta_p])
-    p3 = - np.dot(dq_desired.transpose(), Wq)
+    #dq_desired = 0.5 * (q_max - q_min) * np.ones((6, 1))
+    p1 = -2 * np.linalg.multi_dot([ delta_p.transpose(), J])
+    #p3 = - np.dot(dq_desired.transpose(), Wq)
     p = p1
     A = J
     b = (pGoalArr[:, i] - p_ef)/deltaT  # r_dot
@@ -273,7 +276,8 @@ for i in range(1, timeArr.shape[0]):
     lower_bound_delta = delta_q_min
     upper_bound_delta = delta_q_max
     h = np.hstack([-lower_bound.squeeze(), upper_bound.squeeze(), -lower_bound_delta.squeeze(), upper_bound_delta.squeeze()]).transpose()
-    sol = solvers.qp(matrix(Q), matrix(p), matrix(G), matrix(h))
+    opts = {'maxiters': 500, 'show_progress': False}
+    sol = solvers.qp(matrix(Q), matrix(p), matrix(G), matrix(h), options = opts)
     q = q + np.array(sol['x']).transpose()
 
     servo_qArr[:, [i]] = move_to_position(servos, q.squeeze(), q0, home, b_robot_online)
@@ -282,27 +286,38 @@ for i in range(1, timeArr.shape[0]):
     qArr[:, [i]] = q.transpose()
     pArr[:, [i]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
 
+    delta_p = pGoalArr[:, i] - pArr[:, i]
+    dArr[:, [i]] = np.linalg.norm(delta_p)
+    if dArr[:, i] > 1:
+        print("Too much distance {}".format(np.linalg.norm(delta_p)))
+        print("iteration {}".format(i))
+
 # Homing robot
 if b_robot_online:
     offset = Homing(servos, home)
 
-fig, axs = plt.subplots(3)
+fig, axs = plt.subplots(4)
 axs[0].plot(pArr[0, :], pArr[2, :], 'bo',  pGoalArr[0, :], pGoalArr[2, :], 'r' )
 axs[0].set(xlabel='X pos (mm)', ylabel='Y pos (mm)',
        title='End effector position')
 axs[0].grid()
 
-axs[1].plot(timeArr, qArr[0, :]*180/pi, 'y', timeArr, qArr[1, :]*180/pi, 'b', timeArr, qArr[2, :]*180/pi, 'r',
-            timeArr, qArr[3, :]*180/pi, 'm', timeArr, qArr[4, :]*180/pi, 'k', timeArr, qArr[5, :]*180/pi, 'g')
-axs[1].set(xlabel='time (s)', ylabel='Joint angle (deg)',
-       title='Joint angles')
+axs[1].plot(timeArr, dArr[0, :], 'r')
+axs[1].set(xlabel='time (s)', ylabel='Abs error (mm)',
+       title='End effector error')
 axs[1].grid()
 
-axs[2].plot(timeArr, servo_qArr[0, :], 'y', timeArr, servo_qArr[1, :], 'b', timeArr, servo_qArr[2, :], 'r',
-            timeArr, servo_qArr[3, :], 'm', timeArr, servo_qArr[4, :], 'k', timeArr, servo_qArr[5, :], 'g')
-axs[2].set(xlabel='time (mm)', ylabel='servo angle (deg)',
-       title='Servo angles')
+axs[2].plot(timeArr, qArr[0, :]*180/pi, 'y', timeArr, qArr[1, :]*180/pi, 'b', timeArr, qArr[2, :]*180/pi, 'r',
+            timeArr, qArr[3, :]*180/pi, 'm', timeArr, qArr[4, :]*180/pi, 'k', timeArr, qArr[5, :]*180/pi, 'g')
+axs[2].set(xlabel='time (s)', ylabel='Joint angle (deg)',
+       title='Joint angles')
 axs[2].grid()
+
+axs[3].plot(timeArr, servo_qArr[0, :], 'y', timeArr, servo_qArr[1, :], 'b', timeArr, servo_qArr[2, :], 'r',
+            timeArr, servo_qArr[3, :], 'm', timeArr, servo_qArr[4, :], 'k', timeArr, servo_qArr[5, :], 'g')
+axs[3].set(xlabel='time (mm)', ylabel='servo angle (deg)',
+       title='Servo angles')
+axs[3].grid()
 
 plt.show()
 
