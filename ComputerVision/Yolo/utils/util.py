@@ -10,7 +10,7 @@ import cv2
 def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
     batch_size = prediction.size(0)
     stride = inp_dim // prediction.size(2)
-    grid_size = inp_dim // stride
+    grid_size = int(inp_dim // float(inp_dim / prediction.size(2)))
     bbox_attrs = 5 + num_classes
     num_anchors = len(anchors)
 
@@ -38,7 +38,7 @@ def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
 
     x_y_offset = torch.cat((x_offset, y_offset), 1).repeat(1,num_anchors).view(-1,2).unsqueeze(0)
 
-    prediction[:,:,:2] += x_y_offset
+    prediction[:,:,:2] += x_y_offset.cpu()
 
     #log space transform height and the width
     anchors = torch.FloatTensor(anchors)
@@ -47,7 +47,7 @@ def predict_transform(prediction, inp_dim, anchors, num_classes, CUDA = True):
         anchors = anchors.cuda()
 
     anchors = anchors.repeat(grid_size*grid_size, 1).unsqueeze(0)
-    prediction[:,:,2:4] = torch.exp(prediction[:,:,2:4])*anchors
+    prediction[:,:,2:4] = torch.exp(prediction[:,:,2:4])*anchors.cpu()
 
     prediction[:,:,5: 5 + num_classes] = torch.sigmoid((prediction[:,:, 5 : 5 + num_classes]))
     prediction[:,:,:4] *= stride
