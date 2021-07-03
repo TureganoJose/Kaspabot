@@ -168,7 +168,7 @@ home[5] = 120  # q6
 home[6] = 170  # q7
 
 # Measured distance between joint 2 and 5
-measurement = 86
+measurement = 78
 d4 = 160
 a2 = 130
 d6 = 130
@@ -184,7 +184,7 @@ if b_robot_online:
 # Initial pose as defined for Inverse kinematics and initial homing position of the robot
 q1 = 0
 q2 = pi/2
-q3 = -(pi/2 - a23) # Review this lower limit, it seems too low (it depends on measurement between joint 2 and 5
+q3 = -(pi/2 - a23)  # Review this lower limit, it seems too low (it depends on measurement between joint 2 and 5
 q4 = 0
 q5 = pi/2
 q6 = 0
@@ -192,14 +192,16 @@ q6 = 0
 f = 0.25
 deltaT = 0.05
 timeArr = np.arange(0.0, 1/f, deltaT)
+n_steps = timeArr.size
+n_moves = 2
+n_steps_per_move = n_steps//n_moves
 
 # Define trajectory
 q0 = np.array([q1, q2, q3, q4, q5, q6]) #np.array([0, pi/2, pi/2, 0, -pi/2, 0])
 dq0 = np.zeros((1, 6))
-radius = 50
-pCenter = End_Effector_position(q0, a2, d4, d6)
-pCenter[0] += 0
-pCenter[2] += 0
+end_effector_pos = End_Effector_position(q0, a2, d4, d6)
+end_effector_pos[0] += 0
+end_effector_pos[2] += 0
 q = q0
 dq = dq0
 
@@ -212,13 +214,25 @@ pArr = np.zeros((3, timeArr.shape[0]))
 dArr = np.zeros((1, timeArr.shape[0]))
 servo_qArr = np.zeros((6, timeArr.shape[0]))
 pGoalArr = np.zeros((3, timeArr.shape[0]))
+pGoalArr1 = np.zeros((3, timeArr.shape[0]//2))
+pGoalArr2 = np.zeros((3, timeArr.shape[0]//2))
 
-# Straight line between pCenter and pGoal
-pGoal = np.array([250.0, 0.0, 33]) #([310.0, 0.0, 50])
-pGoalArr[0] = pCenter[0] + (((pGoal[0] - pCenter[0])/np.amax(timeArr))*timeArr)
-pGoalArr[1] = pCenter[1] + (((pGoal[1] - pCenter[1])/np.amax(timeArr))*timeArr)
-pGoalArr[2] = pCenter[2] + (((pGoal[2] - pCenter[2])/np.amax(timeArr))*timeArr)
+# Define chess X-Y position on the chess board for a constant z coordinate
 
+chess_pos = np.array([250.0, 50.0, -30])
+
+pGoal1 = np.array([chess_pos[0], chess_pos[1], end_effector_pos[2]])  # Position over the piece
+pGoal2 = np.array([chess_pos[0], chess_pos[1], chess_pos[2]])  # Lower end effector
+
+pGoalArr1[0] = end_effector_pos[0] + (pGoal1[0]-end_effector_pos[0]) * (np.arange(n_steps//2)/(n_steps_per_move))
+pGoalArr1[1] = end_effector_pos[1] + (pGoal1[1]-end_effector_pos[1]) * (np.arange(n_steps//2)/(n_steps_per_move))
+pGoalArr1[2] = end_effector_pos[2] + (pGoal1[2]-end_effector_pos[2]) * (np.arange(n_steps//2)/(n_steps_per_move))
+
+pGoalArr2[0] = pGoal1[0] + (pGoal2[0] - pGoal1[0]) * (np.arange(n_steps//2)/(n_steps_per_move))
+pGoalArr2[1] = pGoal1[1] + (pGoal2[1] - pGoal1[1]) * (np.arange(n_steps//2)/(n_steps_per_move))
+pGoalArr2[2] = pGoal1[2] + (pGoal2[2] - pGoal1[2]) * (np.arange(n_steps//2)/(n_steps_per_move))
+
+pGoalArr = np.hstack((pGoalArr1, pGoalArr2))
 # Circle
 # pGoalArr[:, :] = radius * np.array([np.sin(2*pi*f*timeArr), np.zeros((timeArr.shape[0])), np.cos(2*pi*f*timeArr)])
 # pGoalArr[0, :] += pCenter[0]
@@ -322,77 +336,3 @@ axs[3].grid()
 plt.show()
 
 print('hola')
-# Implementing this paper
-# https://www.researchgate.net/publication/5614013_A_dual_neural_network_for_redundancy_resolution_of_kinematically_redundant_manipulators_subject_to_joint_limits_and_joint_velocity_limits
-
-# Q = np.identity(6)
-# p = np.ones((6, 1))
-# q_dot_max = 1
-# q_dot_min = -1
-# q_max = 240 * pi/180
-# q_min = 0
-# k = 2
-# beta = 0.5
-# for i in range(timeArr.shape[0]):
-#     p_ef = End_Effector_position(q, a2, d4, d6)
-#     t = timeArr[i]
-#     J = Jacobian_end_effector(q, a2, d4, d6)
-#     A = J
-#     b = (pGoalArr[:, i] - p_ef)/deltaT  # r_dot
-#     G = np.vstack([ -np.eye(6), np.eye(6)])
-#     lower_bound = np.vstack([q_dot_min*np.ones((1, 6)), k*(beta * q_min*np.ones((1, 6))-q)])
-#     lower_bound = np.amax( lower_bound, axis=0)
-#     upper_bound = np.vstack([q_dot_max*np.ones((1, 6)), k*(beta * q_max*np.ones((1, 6))-q)])
-#     upper_bound = np.amin( upper_bound, axis=0)
-#     h = np.hstack([-lower_bound, upper_bound])
-#     sol = solvers.qp(matrix(Q), matrix(p), matrix(G), matrix(h), matrix(A), matrix(b))
-#     q = np.array(sol['x'])
-#     qArr[:, [i]] = q
-#     pArr[:, [i]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
-#
-# fig, axs = plt.subplots(2)
-# axs[0].plot(pArr[0, :], pArr[2, :], 'b', pGoalArr[0, :], pGoalArr[2, :], 'r' )
-# axs[0].set(xlabel='X pos (mm)', ylabel='Y pos (mm)',
-#        title='End effector position')
-# axs[0].grid()
-#
-# axs[1].plot(timeArr, qArr[0, :]*180/pi, 'y', timeArr, qArr[1, :]*180/pi, 'b', timeArr, qArr[2, :]*180/pi, 'r',
-#             timeArr, qArr[3, :]*180/pi, 'm', timeArr, qArr[4, :]*180/pi, 'k', timeArr, qArr[5, :]*180/pi, 'g')
-# axs[1].set(xlabel='time (mm)', ylabel='Joint angle (deg)',
-#        title='Joint angles')
-# axs[1].grid()
-
-# Q = np.identity(9)
-# p = np.zeros((9, 1))
-# for i in range(timeArr.shape[0]):
-#     p_ef = End_Effector_position(q, a2, d4, d6)
-#     t = timeArr[i]
-#     J = Jacobian_end_effector(q, a2, d4, d6)
-#     A = np.identity(9)
-#     b = np.vstack((np.transpose(np.expand_dims(q, axis=0)), np.zeros((3, 1))))
-#     G = np.identity(9)
-#     G[6, 6] = 0.0
-#     G[7, 7] = 0.0
-#     G[8, 8] = 0.0
-#     h = 240 * (pi/180) * np.ones((9, 1))# limit is 240 deg
-#     h[6, 0] = pGoalArr[0, i] - p_ef[0]+0.1
-#     h[7, 0] = pGoalArr[1, i] - p_ef[1]+0.1
-#     h[8, 0] = pGoalArr[2, i] - p_ef[2]+0.1
-#     pseudo_inv_J = np.linalg.pinv(J)
-#     A[0, 6:9] = - 1 *deltaT* pseudo_inv_J[0, :]
-#     A[1, 6:9] = - 1 *deltaT* pseudo_inv_J[1, :]
-#     A[2, 6:9] = - 1 *deltaT* pseudo_inv_J[2, :]
-#     A[3, 6:9] = - 1 *deltaT* pseudo_inv_J[3, :]
-#     A[4, 6:9] = - 1 *deltaT* pseudo_inv_J[4, :]
-#     A[5, 6:9] = - 1 *deltaT* pseudo_inv_J[5, :]
-#     A[6, 6] = 0.0
-#     A[7, 7] = 0.0
-#     A[8, 8] = 0.0
-#     sol = solvers.qp(matrix(Q), matrix(p), matrix(G), matrix(h), matrix(A), matrix(b))
-#     q = sol['x'][1:6]
-#     qArr[:, [i]] = q.T
-#     pArr[:, [i]] = End_Effector_position(q, a2, d4, d6).reshape(3, 1)
-
-    # Moore Penrose
-    # numpy.linalg.pinv(a, rcond=1e-15, hermitian=False)[source]
-    #dq = 50 * np.dot(, (pGoalArr[:, [i]]-pArr[:, [i]])).T
